@@ -8,12 +8,40 @@ const cors = require('cors');
 
 const secretKey = 'your-256-bit-secret'; // 定义一个密钥用于JWT签名
 const refreshTokenSecret = 'your-refresh-token-secret'; // 定义一个密钥用于刷新JWT签名
-const refreshTokens = []; // 存储刷新令牌
+let refreshTokens = []; // 存储刷新令牌
 
 //连接数据库，确保使用的是最新的解析器
-mongoose.connect('mongodb://localhost:27017/myapp', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+mongoose.connect('mongodb://localhost:27018/myapp', {});
+
+const commentSchema = new mongoose.Schema({
+  animeId: { type: String, required: true },
+  username: { type: String, required: true },
+  comment: { type: String, required: true },
+  rating: { type: Number, required: true },
+  replies: [{
+    username: { type: String, required: true },
+    comment: { type: String, required: true },
+    date: { type: Date, default: Date.now }
+  }]
+}, { timestamps: true });
+
+const Comment = mongoose.model('Comment', commentSchema);
+
+// 在您的服务器启动代码中添加这段
+mongoose.connection.once('open', async () => {
+  try {
+    await mongoose.connection.db.collection('favorites').dropIndex('username_1_id_1');
+    console.log('成功删除 username_1_id_1 索引');
+  } catch (error) {
+    console.log('删除 username_1_id_1 索引失败，可能不存在:', error.message);
+  }
+  
+  try {
+    await mongoose.connection.db.collection('favorites').dropIndex('id_1');
+    console.log('成功删除 id_1 索引');
+  } catch (error) {
+    console.log('删除 id_1 索引失败，可能不存在:', error.message);
+  }
 });
 
 //确认数据库的用户数据格式
@@ -21,6 +49,20 @@ const UserData = mongoose.model('UserData', new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
 }));
+
+// 收藏数据模式和模型
+const favoriteSchema = new mongoose.Schema({
+  username: { type: String, required: true },
+  animeId: { type: String, required: true }
+}, { 
+  _id: true,  // 使用默认的 _id
+  versionKey: false  // 不使用 __v 字段
+});
+
+// 修改索引定义
+favoriteSchema.index({ username: 1, animeId: 1 }, { unique: true });
+
+const Favorite = mongoose.model('Favorite', favoriteSchema);
 
 //将前端传送给app的信息全部变成json形式
 app.use(express.json());
@@ -75,7 +117,7 @@ app.post('/login', async (req, res) => {
     //将刷新令牌记录下来，后续会根据刷新令牌给前端定义新的令牌
     refreshTokens.push(refreshtoken);
     //将一小时令牌和刷新令牌发给前端
-    return res.status(200).send('Login successful!').json({token,refreshtoken});
+    return res.status(200).json({ token, refreshtoken });
   } catch (error) {
     return res.status(400).send('Login failed3!');
   }
@@ -113,7 +155,7 @@ app.get('/protected', authJwt, (req, res)=>{
   res.send('protected route is running!');
 })
 
-//测验jwt是否正确
+//中间件，测验jwt是否正确
 function authJwt(req, res, next){
   //从前端获取authheader，格式为bear token
   const authorization = req.header('authheader');
@@ -131,6 +173,63 @@ function authJwt(req, res, next){
     next();
   })
 }
+
+app.post('/favorite', async (req, res) => {
+  try {
+    const { animeId, username } = req.body;
+    if (!username) {
+      return res.status(400).send('Username is required');
+    }
+    if (!animeId) {
+      return res.status(400).send('Anime ID is required');
+    }
+    const exists1 = await Favorite.findOne({ username, animeId });
+    if (exists1) {
+      return res.status(200).send("你已经收藏过此动漫");
+    }
+    console.log(`exists1没有找到，正在进行newFavorite: ${username}, ${animeId}`);
+    const newFavorite = new Favorite({ username, animeId });
+    console.log(`newFavorite正确，正在进行save: ${username}, ${animeId}`);
+    const savedFavorite = await newFavorite.save();
+    console.log("save正确", savedFavorite);
+    res.status(200).send("收藏成功");
+  } catch (error) {
+    console.error('收藏操作错误:', error);
+    if (error.code === 11000) {
+      res.status(400).send("重复收藏");
+    } else {
+      res.status(500).send(`收藏失败，错误: ${error.message}`);
+    }
+  }
+});
+
+app.delete('/favorite', async (req, res) => {
+  try {
+    const { animeId, username } = req.body;
+    const result = await Favorite.findOneAndDelete({ username, animeId });
+    
+    if (result) {
+      res.status(200).send("取消收藏成功");
+    } else {
+      res.status(404).send("未找到收藏记录");
+    }
+  } catch (error) {
+    console.error('取消收藏操作错误:', error);
+    res.status(500).send("取消收藏失败，未知错误");
+  }
+});
+
+app.get('/favorites/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const favorites = await Favorite.find({ username });
+    res.status(200).json(favorites);
+  } catch (error) {
+    console.error('获取收藏列表错误:', error);
+    res.status(500).send("获取收藏列表失败");
+  }
+});
+
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

@@ -21,16 +21,42 @@ import Login from './Login';  // 导入 Login 组件
 import axios from 'axios';
 import { useEffect, useState} from 'react';  // 导入 React 库及相关钩子
 import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import { useDispatch, useSelector } from 'react-redux';
+import {logout} from './action';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import './AnimeCard.css'; // 导入上面的CSS样式
 
-
-
-
+const fetchAnimesWithRetry = async (url, retries = 3, delay = 1000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const response = await axios.get(url);
+      return response.data.data;
+    } catch (error) {
+      if (error.response && error.response.status === 429) {
+        // 如果是 429 错误，等待一段时间后重试
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+  throw new Error('Failed to fetch after multiple retries');
+};
 
 const AnimeList = () => {
+  const dispatch = useDispatch();
+  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
   const navigate = useNavigate();
-  const [animes, setAnimes] = useState([]);
-  const [page, setPage] = useState(0);  // 定义当前页码状态
-  const animesPerPage = 4;  // 每页显示的动漫数量
+  const [animestop, setAnimesTop] = useState([]); //储存top的动漫信息，数组
+  const [animesUpcoming, setAnimesUpcoming] = useState([]);//储存Upcoming的动漫信息，数组
+  const [animesRecommand, setAnimesRecommand] = useState([]);
+  const [pageTop, setPageTop] = useState(0);  // 定义Top的页码状态
+  const [pageUpcoming, setPageUpcoming] = useState(0); //定义Upcoming的页码状态
+  const [pageRecommand, setPageRecommand] = useState(0);
+  const [anchorElLogin, setAnchorElLogin] = useState(null);
+
+  const animesPerPage = 5;  // 每页显示的动漫数量
 
   const [openLogin, setOpenLogin] = useState(false);
 
@@ -42,6 +68,13 @@ const AnimeList = () => {
     setOpenLogin(false);
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshtoken');
+    dispatch(logout());
+    setAnchorElLogin(null);
+  };
+
   const [anchorEl, setAnchorEl] = React.useState(null);
   const open = Boolean(anchorEl);
 
@@ -51,25 +84,57 @@ const AnimeList = () => {
   const handleClose = () => {
     setAnchorEl(null);
   };
+
+  const handleMenu = (event) => {
+    setAnchorElLogin(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorElLogin(null);
+  };
   useEffect(() => {
-    // 调用API获取动漫列表
     const fetchAnimes = async () => {
-      const response = await axios.get('https://api.jikan.moe/v4/top/anime'); // 替换为实际的API端点
-      setAnimes(response.data.data); // 根据实际API的返回数据格式进行调整
+      try {
+        const topAnimes = await fetchAnimesWithRetry('https://api.jikan.moe/v4/top/anime');
+        const upcomingAnimes = await fetchAnimesWithRetry('https://api.jikan.moe/v4/seasons/now');
+        const recommandAnimes = await fetchAnimesWithRetry('https://api.jikan.moe/v4/recommendations/anime');
+        setAnimesTop(topAnimes);
+        setAnimesUpcoming(upcomingAnimes);
+        setAnimesRecommand(recommandAnimes);
+      } catch (error) {
+        console.error('Failed to fetch animes', error);
+      }
     };
     fetchAnimes();
   }, []);
 
-  const handleNextPage = () => {
-    setPage((prevPage) => (prevPage + 1) % Math.ceil(animes.length / animesPerPage));  // 切换到下一页
-  };
+  const handleNextPageTop = () => {
+    setPageTop((prevPage) => (prevPage + 1) % Math.ceil(animestop.length / animesPerPage));  // 切换到下一页
+  };//top换页方法
 
-  const handlePrevPage = () => {
-    setPage((prevPage) => (prevPage - 1 + Math.ceil(animes.length / animesPerPage)) % Math.ceil(animes.length / animesPerPage));  // 切换到上一页
-  };
+  const handlePrevPageTop = () => {
+    setPageTop((prevPage) => (prevPage - 1 + Math.ceil(animestop.length / animesPerPage)) % Math.ceil(animestop.length / animesPerPage));  // 切换到上一页
+  };//top向前换页方法
 
-  const currentAnimes = animes.slice(page * animesPerPage, (page + 1) * animesPerPage);
+  const handlePrevPageUpcoming = () => {
+    setPageUpcoming((prevPage) => (prevPage - 1 + Math.ceil(animesUpcoming.length / animesPerPage)) % Math.ceil(animesUpcoming.length / animesPerPage));  // 切换到上一页
+  };//Upcoming前换页方法
 
+  const handleNextPageUpcoming = () => {
+    setPageUpcoming((prevPage) => (prevPage + 1) % Math.ceil(animesUpcoming.length / animesPerPage));  // 切换到下一页
+  };//Upcoming后换页方法
+
+  const handlePrevPageRecommand = () => {
+    setPageRecommand((prevPage) => (prevPage - 1 + Math.ceil(animesRecommand.length / animesPerPage)) % Math.ceil(animesRecommand.length / animesPerPage));  // 切换到上一页
+  };//recommand前换页
+
+  const handleNextPageRecommand = () => {
+    setPageRecommand((prevPage) => (prevPage + 1) % Math.ceil(animesRecommand.length / animesPerPage));  // 切换到下一页
+  };//recommend后换页
+  
+  const currentAnimestop = animestop.slice(pageTop * animesPerPage, (pageTop + 1) * animesPerPage);//Top当前四个动漫
+  const currentAnimesUpcoming = animesUpcoming.slice(pageUpcoming * animesPerPage, (pageUpcoming + 1) * animesPerPage);//Upcoming当前四个动漫
+  const currentAnimesRecommand = animesRecommand.slice(pageRecommand * animesPerPage, (pageRecommand+1) * animesPerPage); //Recommand的当前五个动漫
 
   return (
     <Box sx={{ backgroundColor: 'black', flexGrow: 1}}>
@@ -108,7 +173,19 @@ const AnimeList = () => {
             size="small"
             sx={{ backgroundColor: 'white', borderRadius: 5, mr: 7 }}
           />
-          <AccountCircleIcon onClick = {handleClickOpen}></AccountCircleIcon>
+          {isLoggedIn ? (
+          <div>
+          <AccountCircleIcon onClick={handleMenu} sx={{ color: '#183A4F' }}>Menu</AccountCircleIcon>
+          <Menu
+            anchorEl={anchorElLogin}
+            open={Boolean(anchorElLogin)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+          </Menu>
+          </div>
+          ) :(
+          <AccountCircleIcon onClick = {handleClickOpen}></AccountCircleIcon>)}
           <Login open={openLogin} onClose={handleCloseLogin} />
         </Toolbar>
       </AppBar>
@@ -119,47 +196,121 @@ const AnimeList = () => {
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Top 榜单
           </Typography>
+          <ChevronRightIcon variant="contained" onClick={handlePrevPageTop} sx={{transform: 'rotate(180deg)',fontSize: '2rem', backgroundColor: 'black', color: 'white'}}>
+        </ChevronRightIcon>
+          <ChevronRightIcon variant="contained" onClick={handleNextPageTop} sx={{fontSize: '2rem', backgroundColor: 'black', color: 'white'}}>
+        </ChevronRightIcon>
           </Toolbar>
           </AppBar>
     <Box sx={{ background:'black', display: 'flex', flexWrap: 'wrap', gap: 2, p: 2 }}>
-      {currentAnimes.map(anime => (
+      {currentAnimestop.map(anime => (
         <Card 
+          className="anime-card"
           key={anime.id} 
-          sx={{background:'black', maxWidth: 200, flex: '1 1 calc(20% - 16px)', m: 1, transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+          sx={{borderRadius: '15px', background:'black', maxWidth: 160, maxHeight: 310, flex: '1 1 calc(20% - 16px)', m: 1.2, transition: '0.3s', '&:hover': { boxShadow: 6 } }}
         >
-          <CardActionArea component={Link} to={`/anime-detail/${anime.id}`}>
+          <CardActionArea component={Link} to={`/anime-detail/${anime.mal_id}`} sx={{ height: '100%' }}>
+          <Box sx = {{display:"flex", flexDirection : "column", gap : 1}}>
             <CardMedia
               component="img"
-              height="300"
-              image={anime.images.jpg.image_url} // 替换为实际的图像URL字段
+              height="210"
+              image={anime.images.jpg.image_url} 
+              alt={anime.title}
+              sx={{ objectFit: 'cover' ,borderRadius: '15px'}}
+              
+            />
+            <Box className="play-button">
+            <PlayCircleOutlineIcon sx={{ fontSize: 50, color: '#474144' }} />
+            </Box>
+            
+            <Typography variant="body4" color="white">
+               {anime.score}
+             </Typography>
+              <Typography variant="body4" color="white" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {anime.title}
+              </Typography>
+              </Box>
+         </CardActionArea>
+        </Card>
+      ))}
+      
+      </Box>
+      <Box sx={{ flexGrow: 1 }}>
+      <AppBar position="static" sx={{ backgroundColor: 'black' }}>
+          <Toolbar>
+          <LocalFireDepartmentIcon
+           ></LocalFireDepartmentIcon>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            Upcoming 榜单
+          </Typography>
+          <ChevronRightIcon variant="contained" onClick={handlePrevPageUpcoming} sx={{transform: 'rotate(180deg)',fontSize: '2rem', backgroundColor: 'black', color: 'white'}}>
+        </ChevronRightIcon>
+          <ChevronRightIcon variant="contained" onClick={handleNextPageUpcoming} sx={{fontSize: '2rem', backgroundColor: 'black', color: 'white'}}>
+        </ChevronRightIcon>
+          </Toolbar>
+          </AppBar>
+    <Box sx={{ background:'black', display: 'flex', flexWrap: 'wrap', gap: 2, p: 2 }}>
+      {currentAnimesUpcoming.map(anime => (
+        <Card 
+          key={anime.id} 
+          sx={{borderRadius: '15px', background:'black', maxWidth: 160, maxHeight: 310, flex: '1 1 calc(20% - 16px)', m: 1.2, transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+        >
+          <CardActionArea component={Link} to={`/anime-detail/${anime.mal_id}`} sx={{ height: '100%' }}>
+          <CardMedia
+              component="img"
+              height="210"
+              image={anime.images.jpg.image_url} 
               alt={anime.title}
             />
-
             <CardContent sx={{background:'black', flexGrow:1, height:'100%'}}>
-            <Typography variant="body2" color="white">
-              {anime.mal_id}</Typography>
-
-            
-            <Typography variant="body2" color="white">
-               
-                {anime.score}
-              </Typography>
-              <Typography variant="body2" color="white">
+              <Typography variant="body2" color="white"sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {anime.title}
               </Typography>
             </CardContent>
          </CardActionArea>
         </Card>
       ))}
-    </Box>
-    <Box sx={{ display: 'flex', justifyContent: 'center', p: 2, gap: 2 }}>
-        <Button variant="contained" onClick={handlePrevPage} sx={{backgroundColor: 'white', color: 'black'}}>
-          上一页
-        </Button>
-        <Button variant="contained" onClick={handleNextPage} sx={{backgroundColor: 'white', color: 'black'}}>
-          下一页
-        </Button>
       </Box>
+    </Box>
+    <Box sx={{ flexGrow: 1 }}>
+    <AppBar position="static" sx={{ backgroundColor: 'black' }}>
+          <Toolbar>
+          <LocalFireDepartmentIcon
+           ></LocalFireDepartmentIcon>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+            推荐榜单
+          </Typography>
+          <ChevronRightIcon variant="contained" onClick={handlePrevPageRecommand} sx={{transform: 'rotate(180deg)',fontSize: '2rem', backgroundColor: 'black', color: 'white'}}>
+        </ChevronRightIcon>
+          <ChevronRightIcon variant="contained" onClick={handleNextPageRecommand} sx={{fontSize: '2rem', backgroundColor: 'black', color: 'white'}}>
+        </ChevronRightIcon>
+          </Toolbar>
+          </AppBar>
+    <Box sx={{ background:'black', display: 'flex', flexWrap: 'wrap', gap: 2, p: 2 }}>
+      {currentAnimesRecommand.map(anime => (
+          <Card
+            key={anime.mal_id}
+            sx={{ background: 'black', width: 160, height: 310, m: 1.2, transition: '0.3s', '&:hover': { boxShadow: 6 } }}
+          >
+          <CardActionArea component={Link} to={`/anime-detail/${anime.entry[0].mal_id}`} sx={{ height: '100%' }}>
+          <CardMedia
+              component="img"
+              height="210"
+              image={anime.entry[0].images.jpg.image_url} 
+              alt={anime.entry[0].title}
+            />
+            <CardContent sx={{background:'black', flexGrow:1, height:'100%'}}>
+              <Typography variant="body2" color="white"sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {anime.entry[0].title}
+              </Typography>
+            </CardContent>
+         </CardActionArea>
+        </Card>
+        ))}
+        
+      
+      </Box>
+    </Box>
     </Box>
   );
 };

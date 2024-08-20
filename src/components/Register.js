@@ -11,26 +11,33 @@ import { useNavigate } from 'react-router-dom';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Fade from '@mui/material/Fade';
+import Container from '@mui/material/Container';
+import { useDispatch } from 'react-redux';
+import { login } from './action';
 
 const Register = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
+  
 
   const navigate = useNavigate();
-
-  const [anchorEl, setAnchorEl] = React.useState(null);
-  const open = Boolean(anchorEl);
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
+  const dispatch = useDispatch();
+  
   const handleRegister = async () => {
     try {
-        const response = await axios.post('http://localhost:3001/register', { username, password });
-        setMessage(response.data); 
+        if(password == confirmPassword){
+        const response = await axios.post('http://localhost:3001/auth/register', {username, password});
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('refreshtoken', response.data.refreshtoken);
+        localStorage.setItem('username', username); 
+        dispatch(login(username));
+        navigate('/');
+      }
+        else{
+          setMessage("Password and ConfirmPassword do not match");
+    }
       } catch (error) {
         if (error.response && error.response.data) {
           setMessage(error.response.data);
@@ -40,8 +47,17 @@ const Register = () => {
     }
   };
 
+  const [anchorEl, setAnchorEl] = React.useState(null);
+  const open = Boolean(anchorEl);
+  const handleClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
   return (
-    <Box sx={{ backgroundColor: 'black', flexGrow: 1 ,height: '100vh'}}>
+    <Box sx={{ backgroundColor: 'black', flexGrow: 1 ,height: '120vh'}}>
       <AppBar position="static" sx={{ backgroundColor: 'black' }}>
         <Toolbar>
         <Button
@@ -81,13 +97,75 @@ const Register = () => {
         </Toolbar>
       </AppBar>
       
-    <div>
-      <h2>Register</h2>
-      <input type="text" placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
-      <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-      <button onClick={handleRegister}>Register</button>
-      <p>{message}</p>
-    </div>
+      <Container component="main" maxWidth="xs">
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          backgroundColor: '#27292e',
+          padding: 3,
+          borderRadius: 1,
+        }}
+      >
+        <Typography component="h1" variant="h5" style={{ color: 'white' }}>
+          用户注册
+        </Typography>
+        <Box component="form" noValidate sx={{ mt: 1 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="username"
+            label="账号"
+            name="username"
+            autoComplete="username"
+            autoFocus
+            InputLabelProps={{ style: { color: 'white' } }}
+            InputProps={{ style: { color: 'white' } }}
+            onChange={(e)=>setUsername(e.target.value)}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="密码"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            InputLabelProps={{ style: { color: 'white' } }}
+            InputProps={{ style: { color: 'white' } }}
+            onChange={(e)=>setPassword(e.target.value)}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="confirmPassword"
+            label="确认密码"
+            type="password"
+            id="confirmPassword"
+            autoComplete="confirm-password"
+            InputLabelProps={{ style: { color: 'white' } }}
+            InputProps={{ style: { color: 'white' } }}
+            onChange={(e)=>setConfirmPassword(e.target.value)}
+          />
+          <Box sx={{ display: 'flex', justifyContent: 'center'}}>
+          <Button
+            onClick={handleRegister}
+            type="Button"
+            variant="contained"
+            sx={{ mt: 3, mb: 2 , width:'80%'}}
+            style={{ backgroundColor: '#eb3e17' }}
+          >
+            立即注册
+          </Button>
+          </Box>
+          <Typography component="h5" style={{ color: 'white' }}>{message}</Typography>
+          </Box>
+      </Box>
+    </Container>
     </Box>
   );
 };

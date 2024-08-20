@@ -1,0 +1,22 @@
+.anime-card {
+    position: relative;
+    transition: background-color 0.1s ease;
+    background-color: #000; /* 初始背景色 */
+  }
+  
+  .anime-card:hover {
+    background-color: #333; /* 悬停时背景色加深 */
+  }
+  
+  .play-button {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0); /* 初始缩放为0 */
+    transition: transform 0.1s ease;
+  }
+  
+  .anime-card:hover .play-button {
+    transform: translate(-50%, -50%) scale(1); /* 悬停时缩放到1 */
+  }
+  

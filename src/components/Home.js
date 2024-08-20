@@ -6,7 +6,6 @@ import Typography from '@mui/material/Typography';  // 导入 Material-UI 的 Ty
 import Button from '@mui/material/Button';  // 导入 Material-UI 的 Button 组件
 import MenuIcon from '@mui/icons-material/Menu';  // 导入 Material-UI 的 Menu 图标
 import TextField from '@mui/material/TextField';  // 导入 Material-UI 的 TextField 组件（用于搜索栏）
-import { useNavigate } from 'react-router-dom';  // 导入 React Router 的 useNavigate 钩子
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
 import Slider from 'react-slick';
@@ -23,9 +22,18 @@ import FiberNewIcon from '@mui/icons-material/FiberNew';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import Login from './Login';  // 导入 Login 组件
 import {useState} from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {logout} from './action';
+import { useNavigate, Link } from 'react-router-dom';  // 导入 React Router 的 useNavigate 钩子
 
 export default function ButtonAppBar() {
+
+  const dispatch = useDispatch();
+  const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
+
+
   const [openLogin, setOpenLogin] = useState(false);
+  const [anchorElLogin, setAnchorElLogin] = useState(null);
 
   const handleClickOpen = () => {
     setOpenLogin(true);
@@ -33,6 +41,21 @@ export default function ButtonAppBar() {
 
   const handleCloseLogin = () => {
     setOpenLogin(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshtoken');
+    dispatch(logout());
+    setAnchorElLogin(null);
+  };
+
+  const handleMenu = (event) => {
+    setAnchorElLogin(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorElLogin(null);
   };
 
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -100,12 +123,26 @@ export default function ButtonAppBar() {
             size="small"
             sx={{ backgroundColor: 'white', borderRadius: 5, mr: 7 }}
           />
-          <AccountCircleIcon onClick = {handleClickOpen}></AccountCircleIcon>
+          {isLoggedIn ? (
+        <div>
+          <AccountCircleIcon onClick={handleMenu} sx={{ color: '#183A4F' }}>Menu</AccountCircleIcon>
+          <Menu
+            anchorEl={anchorElLogin}
+            open={Boolean(anchorElLogin)}
+            onClose={handleMenuClose}
+          >
+            <MenuItem onClick={handleLogout}>Logout</MenuItem>
+          </Menu>
+        </div>
+      ) :(
+          <AccountCircleIcon onClick = {handleClickOpen}></AccountCircleIcon>)}
+          <Login open={openLogin} onClose={handleCloseLogin} />
+
         </Toolbar>
       </AppBar>
       <Box sx={{flexGrow:1, background:'black'}}>
       <Box sx={{ width: '80%', margin: 'auto', mt:2}}>
-        <Slider {...settings}>
+        <Slider {...settings} sx={{borderRadius: '15px'}}>
           {images.map((image, index) => (
             <div key={index} style={{ textAlign: 'center' }}>
               <div style={{ position: 'relative', width: '100%', paddingTop: '50%' }}>
@@ -127,8 +164,8 @@ export default function ButtonAppBar() {
             </div>
           ))}
         </Slider>
+
         </Box>
-        <Login open={openLogin} onClose={handleCloseLogin} />
    </Box>
       <Box sx={{ width: '100%', margin: 'auto' }}>
           <AppBar position="static" sx={{ backgroundColor: 'black' }}>
@@ -142,7 +179,9 @@ export default function ButtonAppBar() {
           </AppBar>
           <Box sx={{ background:'black', flexGrow : 1}}>
             <Box sx={{background:'black', width: '85%', margin: '0 auto',display: 'flex', gap: 4}}>
-            <CardActionArea sx={{ maxWidth: 250}}>
+            <CardActionArea 
+            component={Link} to={`/anime-detail/47917`}
+            sx={{ maxWidth: 250}}>
           <Card sx={{ maxWidth: 250, height: '100%', background: "black" }}>
           <CardMedia
             sx={{ height: 120 }}
@@ -160,7 +199,8 @@ export default function ButtonAppBar() {
           </CardContent>
           </Card>
           </CardActionArea>
-          <CardActionArea sx={{ maxWidth: 250}}>
+          <CardActionArea 
+          component={Link} to={`/anime-detail/52034`}sx={{ maxWidth: 250}}>
           <Card sx={{ maxWidth: 250, height: '100%', background: "black" }}>
           <CardMedia
             sx={{ height: 120 }}
@@ -178,7 +218,7 @@ export default function ButtonAppBar() {
           
           </Card>
           </CardActionArea>
-          <CardActionArea sx={{ maxWidth: 250}}>
+          <CardActionArea component={Link} to={`/anime-detail/40748`} sx={{ maxWidth: 250}}>
           <Card sx={{ maxWidth: 250, height: '100%', background: "black" }}>
           <CardMedia
             sx={{ height: 120 }}
@@ -211,7 +251,7 @@ export default function ButtonAppBar() {
           </AppBar>
           <Box sx={{ background:'black', flexGrow : 1}}>
             <Box sx={{background:'black', width: '85%', margin: '0 auto',display: 'flex', gap: 4}}>
-            <CardActionArea sx={{ maxWidth: 250}}>
+            <CardActionArea component={Link} to={`/anime-detail/54744`}sx={{ maxWidth: 250}}>
           <Card sx={{ maxWidth: 250, height: '100%', background: "black" }}>
           <CardMedia
             sx={{ height: 120 }}
@@ -229,27 +269,27 @@ export default function ButtonAppBar() {
           
           </Card>
           </CardActionArea>
-          <CardActionArea sx={{ maxWidth: 250}}>
+          <CardActionArea 
+          component={Link} to={`/anime-detail/57524`} sx={{ maxWidth: 250}}>
           <Card sx={{ maxWidth: 250, height: '100%', background: "black" }}>
           <CardMedia
             sx={{ height: 120 }}
-            image="./120721502_p0_master1200.jpg"
+            image="./wp_all.jpg"
             title="green iguana"
           />
           <CardContent>  
             <Typography gutterBottom variant="h5" component="div" sx={{color: 'white'}}>
-              小市民
+              败犬女主太多啦！
             </Typography>
             <Typography variant="body2" color='white'>
-              “你是狼”
-              “你是狐狸”
-              “即便如此，我们也要作为小市民活着”
+              “要是我是轻小说男主角。。。那个时候，我会有什么感受呢”
             </Typography>
           </CardContent>
           
           </Card>
           </CardActionArea>
-          <CardActionArea sx={{ maxWidth: 250}}>
+          <CardActionArea 
+          component={Link} to={`/anime-detail/55102`}sx={{ maxWidth: 250}}>
           <Card sx={{ maxWidth: 250, height: '100%', background: "black" }}>
           <CardMedia
             sx={{ height: 120 }}
