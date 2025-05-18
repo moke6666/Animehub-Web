@@ -25,7 +25,7 @@ import {useState} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {logout} from './action';
 import { useNavigate, Link } from 'react-router-dom';  // 导入 React Router 的 useNavigate 钩子
-
+import Bar from "./Bar";
 export default function ButtonAppBar() {
 
   const dispatch = useDispatch();
@@ -88,60 +88,9 @@ export default function ButtonAppBar() {
 
   return (
     <Box sx={{ backgroundColor: 'black', flexGrow: 1 ,height: '100vh'}}>
-      <AppBar position="static" sx={{ backgroundColor: 'black' }}>
-        <Toolbar>
-        <Button
-        id="fade-button"
-        aria-controls={open ? 'fade-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        onClick={handleClick}
-      >
-        <MenuIcon/>
-      </Button>
-      <Menu
-        id="fade-menu"
-        MenuListProps={{
-          'aria-labelledby': 'fade-button',
-        }}
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        TransitionComponent={Fade}
-      >
-        <MenuItem onClick={() => navigate('/AnimeList')}>动漫列表</MenuItem>
-        <MenuItem onClick={handleClose}>动漫论坛</MenuItem>
-        <MenuItem onClick={handleClose}>个人主页</MenuItem>
-      </Menu>
-      <Box sx={{ flexGrow: 1 }}>
-          <Button onClick = {() => navigate('/')}>
-            <Typography variant="h7" component="div" sx={{ flexGrow: 1, color: 'white' }}>Anime Hub</Typography>
-          </Button></Box>
-          <TextField
-            variant="outlined"
-            placeholder="Search…"
-            size="small"
-            sx={{ backgroundColor: 'white', borderRadius: 5, mr: 7 }}
-          />
-          {isLoggedIn ? (
-        <div>
-          <AccountCircleIcon onClick={handleMenu} sx={{ color: '#183A4F' }}>Menu</AccountCircleIcon>
-          <Menu
-            anchorEl={anchorElLogin}
-            open={Boolean(anchorElLogin)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
-        </div>
-      ) :(
-          <AccountCircleIcon onClick = {handleClickOpen}></AccountCircleIcon>)}
-          <Login open={openLogin} onClose={handleCloseLogin} />
-
-        </Toolbar>
-      </AppBar>
+      <Bar></Bar>
       <Box sx={{flexGrow:1, background:'black'}}>
-      <Box sx={{ width: '80%', margin: 'auto', mt:2}}>
+      <Box sx={{ width: '70%', margin: 'auto'}}>
         <Slider {...settings} sx={{borderRadius: '15px'}}>
           {images.map((image, index) => (
             <div key={index} style={{ textAlign: 'center' }}>

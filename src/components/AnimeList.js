@@ -26,6 +26,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import {logout} from './action';
 import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
 import './AnimeCard.css'; // 导入上面的CSS样式
+import Bar from "./Bar";
 
 const fetchAnimesWithRetry = async (url, retries = 3, delay = 1000) => {
   for (let i = 0; i < retries; i++) {
@@ -137,58 +138,8 @@ const AnimeList = () => {
   const currentAnimesRecommand = animesRecommand.slice(pageRecommand * animesPerPage, (pageRecommand+1) * animesPerPage); //Recommand的当前五个动漫
 
   return (
-    <Box sx={{ backgroundColor: 'black', flexGrow: 1}}>
-      <AppBar position="static" sx={{ backgroundColor: 'black' }}>
-        <Toolbar>
-        <Button
-        id="fade-button"
-        aria-controls={open ? 'fade-menu' : undefined}
-        aria-haspopup="true"
-        aria-expanded={open ? 'true' : undefined}
-        onClick={handleClick}
-      >
-        <MenuIcon/>
-      </Button>
-      <Menu
-        id="fade-menu"
-        MenuListProps={{
-          'aria-labelledby': 'fade-button',
-        }}
-        anchorEl={anchorEl}
-        open={open}
-        onClose={handleClose}
-        TransitionComponent={Fade}
-      >
-        <MenuItem onClick={() => navigate('/AnimeList')}>动漫列表</MenuItem>
-        <MenuItem onClick={handleClose}>动漫论坛</MenuItem>
-        <MenuItem onClick={handleClose}>个人主页</MenuItem>
-      </Menu>
-      <Box sx={{ flexGrow: 1 }}>
-          <Button onClick = {() => navigate('/')}>
-            <Typography variant="h7" component="div" sx={{ flexGrow: 1, color: 'white' }}>Anime Hub</Typography>
-          </Button></Box>
-          <TextField
-            variant="outlined"
-            placeholder="Search…"
-            size="small"
-            sx={{ backgroundColor: 'white', borderRadius: 5, mr: 7 }}
-          />
-          {isLoggedIn ? (
-          <div>
-          <AccountCircleIcon onClick={handleMenu} sx={{ color: '#183A4F' }}>Menu</AccountCircleIcon>
-          <Menu
-            anchorEl={anchorElLogin}
-            open={Boolean(anchorElLogin)}
-            onClose={handleMenuClose}
-          >
-            <MenuItem onClick={handleLogout}>Logout</MenuItem>
-          </Menu>
-          </div>
-          ) :(
-          <AccountCircleIcon onClick = {handleClickOpen}></AccountCircleIcon>)}
-          <Login open={openLogin} onClose={handleCloseLogin} />
-        </Toolbar>
-      </AppBar>
+    <Box sx={{ backgroundColor: 'black', flexGrow: 1}}> 
+      <Bar></Bar>
       <AppBar position="static" sx={{ backgroundColor: 'black' }}>
           <Toolbar>
           <LocalFireDepartmentIcon
@@ -216,12 +167,9 @@ const AnimeList = () => {
               height="210"
               image={anime.images.jpg.image_url} 
               alt={anime.title}
-              sx={{ objectFit: 'cover' ,borderRadius: '15px'}}
+                sx={{ objectFit: 'cover' ,borderRadius: '15px'}}
               
             />
-            <Box className="play-button">
-            <PlayCircleOutlineIcon sx={{ fontSize: 50, color: '#474144' }} />
-            </Box>
             
             <Typography variant="body4" color="white">
                {anime.score}

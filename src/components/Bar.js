@@ -9,13 +9,6 @@ import TextField from '@mui/material/TextField';  // 导入 Material-UI 的 Text
 import { useNavigate } from 'react-router-dom';  // 导入 React Router 的 useNavigate 钩子
 import "slick-carousel/slick/slick.css"; 
 import "slick-carousel/slick/slick-theme.css";
-import Slider from 'react-slick';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import Card from '@mui/material/Card';
-import CardActions from '@mui/material/CardActions';
-import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
-import CardActionArea from '@mui/material/CardActionArea';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Fade from '@mui/material/Fade';
@@ -25,15 +18,31 @@ import Login from './Login';  // 导入 Login 组件
 import {useState} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import {logout} from './action';
+import axios from 'axios';
 
 const Bar = () => {
 
   const dispatch = useDispatch();
   const isLoggedIn = useSelector((state) => state.auth.isLoggedIn);
-
+  const navigate = useNavigate();
 
   const [openLogin, setOpenLogin] = useState(false);
   const [anchorElLogin, setAnchorElLogin] = useState(null);
+  const [value, setValue] = useState("");
+
+  const handleChange = (event) => {
+    setValue(event.target.value);
+  }
+
+  const handleKeyDown = async (event) => {
+    if (event.key === "Enter") {
+      try {
+        navigate(`/AnimeSearchbyName/${value}`);
+      } catch (error) {
+        console.error('Error fetching anime data:', error);
+      }
+    }
+  };
 
   const handleClickOpen = () => {
     setOpenLogin(true);
@@ -67,8 +76,6 @@ const Bar = () => {
     setAnchorEl(null);
   };
 
-  const navigate = useNavigate();
-
   return (
     
       <AppBar position="static" sx={{ backgroundColor: 'black' }}>
@@ -94,7 +101,7 @@ const Bar = () => {
       >
         <MenuItem onClick={() => navigate('/AnimeList')}>动漫列表</MenuItem>
         <MenuItem onClick={handleClose}>动漫论坛</MenuItem>
-        <MenuItem onClick={handleClose}>个人主页</MenuItem>
+        <MenuItem onClick={() => navigate('/SelfPage')}>个人主页</MenuItem>
       </Menu>
       <Box sx={{ flexGrow: 1 }}>
           <Button onClick = {() => navigate('/')}>
@@ -104,6 +111,9 @@ const Bar = () => {
             variant="outlined"
             placeholder="Search…"
             size="small"
+            value={value}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
             sx={{ backgroundColor: 'white', borderRadius: 5, mr: 7 }}
           />
           {isLoggedIn ? (

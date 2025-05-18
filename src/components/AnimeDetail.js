@@ -54,6 +54,9 @@ const CustomTextField = styled(TextField)({
   },
 });
 
+ 
+        
+
 const AnimeDetail = () => {
   const [animeDetail, setAnimeDetail] = useState(null);
   const [charactersDetail, setCharactersDetail] = useState([]);
